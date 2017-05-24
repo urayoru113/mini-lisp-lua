@@ -1,0 +1,2 @@
+function foo(parent)
+node = {}

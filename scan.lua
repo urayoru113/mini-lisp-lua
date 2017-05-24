@@ -4,37 +4,30 @@ function scan(str, s)
   -- s: start
   -- e: end
 
-  -- ignore '\n', '\t', ' '
-  local c
+  -- ignore '\n', '\t', '\r', ' '
+  local c = str:sub(s, s)
   local e
-  while 1 do
-    c = str:sub(s, s)
-    if c == '\n' then
-      s = s + 1
-    else
-      break
-    end
-  end
   while c == ' '  or
     c == '\t' or
-    c == '\r' do
+    c == '\r' or
+    c == '\n' do
     s = s + 1
     c = str:sub(s, s)
   end
-  e = s + 1
+  e = s
 
   if c >= '1' and c <= '9' then
-    c = str:sub(e, e)
     e = e + 1
+    c = str:sub(e, e)
     while c >= '0' and
       c <= '9' do
-      c = str:sub(e, e)
       e = e + 1
+      c = str:sub(e, e)
     end
     return TOK_NUM, s, e
   elseif c == '0' then
-    c = str:sub(e, e)
     e = e + 1
+    c = str:sub(e, e)
     if c < '0' and
       c > '9' then
       return TOK_NUM, s, e
@@ -42,11 +35,11 @@ function scan(str, s)
       return TOK_NIL, s, e
     end
   elseif c == '#' then
-    c = str:sub(e, e)
     e = e + 1
+    c = str:sub(e, e)
     if c == 't' or c == 'f' then
-      c = str:sub(e, e)
       e = e + 1
+      c = str:sub(e, e)
       if not (c >= '0' and c <= '9' or
         c >= 'a' and c <= 'z' or
         c >= 'A' and c <= 'Z') then
@@ -56,59 +49,74 @@ function scan(str, s)
     while c >= '0' and c <= '9' or
       c >= 'a' and c <= 'z' or
       c >= 'A' and c <= 'Z' do
-      c = str:sub(e, e)
       e = e + 1
+      c = str:sub(e, e)
     end
     return TOK_NIL, s, e
   elseif c == '(' then
     return TOK_LPAREN, s, e
-  elseif r == ')' then
+  elseif c == ')' then
     return TOK_RPAREN, s, e
-  elseif r == ''  then
+  elseif c == '\0'  then
     return TOK_EOF, s, e
-  elseif r >= 'a' and r <= 'z' or r >= 'A' and r <= 'Z' then
-    r = read(str, postart + ponum)
-    while r >= 'a' and r <= 'z' or
-          r >= 'A' and r <= 'Z' or
-          r >= '0' and r <= '9' or
-          r == '-' do
-      ponum = ponum + 1
-      r = read(str, postart + ponum)
+  elseif c >= 'a' and c <= 'z' or c >= 'A' and c <= 'Z' then
+    e = e + 1
+    c = str:sub(e, e)
+    while c >= 'a' and c <= 'z' or
+          c >= 'A' and c <= 'Z' or
+          c >= '0' and c <= '9' or
+          c == '-' do
+      e = e + 1
+          c = str:sub(e, e)
     end
-    return TOK.ID, postart, ponum
-  elseif r == '<' or
-         r == '>' or
-         r == '=' or
-         r == '+' or
-         r == '-' or
-         r == '*' or
-         r == '/' then
-    if r == '-' then
-      r = read(str, postart + ponum)
-      if r >= '0' and r <= '9' then
-        while r >= '0' and r <= '9' do
-          ponum = ponum + 1
-          r = read(str, postart + ponum)
+    return TOK_ID, s, e 
+  elseif c == '<' or
+         c == '>' or
+         c == '=' or
+         c == '+' or
+         c == '-' or
+         c == '*' or
+         c == '/' then
+    if c == '-' then
+      e = e + 1
+      c = str:sub(e, e)
+      if c >= '0' and c <= '9' then
+        while c >= '0' and c <= '9' do
+          e = e + 1
+          c = str:sub(e, e)
         end
-        return TOK.NUM, postart, ponum
+        return TOK_NUM, s, e
       else
-        ponum = ponum + 1
-        return TOK.ID, postart, ponum
+        return TOK_ID, s, e
       end
-      return TOK.ID, postart, ponum
+      return TOK_ID, s, e 
     end
-    return TOK.ID, postart, ponum
+    return TOK_ID, s, e
   else 
-    return TOK.NIL, postart, ponum
+    return TOK_NIL, s, e
   end
-
 end
 
-function fetch(str, postart, ponum)
+function fetch(str, start, tok, parent, kind)
+  local tok, s, e = scan(str, start)
+  if  then
+    return s, 1
+  end
+  local node = {}
+  node.parent = parent
+  node.kind = kind
+  if parent.front == nil then
+    parent.front = node
+    parent.back = node
+  else
+    parent.back.later = node
+    parent.back = node
+  end
+  return e, nil
 end
 
 function match(str, start, expected)
-  actual, s, e = scan(str, start)
+  actua1, s, e = scan(str, start)
   if actual ~= expected then
     return start, 1
   end
@@ -120,68 +128,72 @@ function syntax_error()
 end
 
 function parse(str, start, parent)
-  node = parent.back
-  while 1 do
-    tok = scan(str, start)  -- peek
-    if tok == NUM then
-      start, err = fetch(str, start, TOK_NUM, node, NODE_NUM)
-      if err then
-        return 1
-      end
-      while 1 do
-        tok = scan(str, start)
-        if tok == ADD then
-          start, err = match(str, start, ADD)
-          if err then
-            return 1
-          end
-          start, err = match(str, start, NUM)
-          if err then
-            return 1
-          end
-        elseif tok == EOF then
-          return nil
-        else
-          syntax_error()
-          return 1
-        end
-      end
-      return nil
-    else
-      syntax_error()
+  local tok = scan(str, start)  -- peek
+  if tok == TOK_LP then
+    start, err = fetch(str, start, TOK_LP, parent, NOD_NIL)
+    if err then
       return 1
     end
+    while 1 do
+      local node = parent.back
+      tok = scan(str, start) --peek
+      if tok == TOK_NUM then
+        start, err = fetch(str, start, TOK_NUM, parent, NOD_NUM)
+        if err then
+          return 1
+        end
+      elseif tok == TOK_SYM then
+        start, err = fetch(str, start, TOK_SYM, parent, NOD_SYM)
+        if err then
+          return 1
+        end
+      elseif tok == TOK_ID then
+        start, err = fetch(str, start, TOK_ID, parent, NOD_ID)
+        if err then
+          return 1
+        end
+      else
+        syntax_error()
+        return 1
+      end
+    end
+    start, err = match(str, start, TOK_RP)
   end
 end
 
 function start()
-  local postart = 1
+  local start = 1
   local ret = 1
-  local src -- haha c89 :)
-  local dst
+  local file  
   local str
-  src = io.open('test.txt', r)
-  if (src == nil) then
+  local node = {}
+  node.kind = TOK_NIL
+  file = io.open('test.txt', r)
+  if (file == nil) then
     goto exit;
   end
-  dst = io.open('test.txt', r)
-  if (dst == nil) then
-    goto close_src;
-  end
-  str, err = file:read("*all")
-  if (err) then
-    goto close_dst;
-  end
-  if parse(str, postart) then
+
+  str = file:read("*all")
+  str = str..'\0'
+  if parse(str, start, node) then
     goto close_file
   end
+
   ret = nil
-  ::close_dst::
-  dst::close()
-  ::close_src::
+  ::close_file::
   src:close()
   ::exit::
   return ret
 end
 
 os.exit(start())
+
+--[[
+local str = arg[1]..'\0'
+local start = 1
+repeat
+  local tok, s, e = scan(str, start)
+  print(str:sub(s, e - 1), tok, s, e)
+  start = e
+until tok == TOK_EOF
+]]--

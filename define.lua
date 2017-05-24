@@ -1,72 +1,40 @@
---
+--define.lua
 
-function creatEnumTable(tbl, index)
-  local enumtbl = {}
-  local enumindex = index or 0
-  for i, v in pairs(tbl) do
-    enumtbl[v] = enumindex + i
-  end
-  return enumtbl
-end
+TOK_NIL = 1 
+TOK_EOF = 2 
+TOK_NUM = 3 
+TOK_SYM = 4 
+TOK_ID = 5 
+TOK_LP = 6
+TOK_RP = 7
 
-function read(str, index)
-  return str:sub(index, index)
-end
+NOD_NIL = 1
+NOD_NUM = 2
+NOD_INT = 3
+NOD_SYM = 4
+NOD_BOL = 5 
+NOD_ID = 6
+NOD_VAR = 7
+NOD_DEF = 8
+NOD_FUN = 9
+NOD_SET = 10
+NOD_IF = 11 
+NOD_LT = 12
+NOD_GT = 13
+NOD_EQ = 14
+NOD_ADD = 15
+NOD_SUB = 16
+NOD_MUL = 17
+NOD_DIV = 18
+NOD_MOD = 19
+NOD_AND = 20
+NOD_OR = 21
+NOD_NOT = 22
+NOD_PRN = 23
+NOD_PRB = 24
 
-TOK = {
- 'NIL',
- 'EOF',
- 'NUM',
- 'SYM',
- 'ID',
- 'LPAREN',
- 'RPAREN'
-}
+OBJ_NIL = 1
+OBJ_INT = 2
+OBJ_BOL = 3
+OBJ_FUN = 4
 
-NOD = {
-  'NIL',
-  'NUM',
-  'INT',
-  'SYM',
-  'BOL', 
-  'ID',
-  'VAR',
-  'DEF',
-  'FUN',
-  'SET', 
-  'IF',
-  'LT',
-  'GT',
-  'EQ',
-  'ADD',
-  'SUB',
-  'MUL',
-  'DIV',
-  'MOD',
-  'AND',
-  'OR',
-  'NOT', 
-  'PRN',
-  'PRB'
-}
-
-OBJ = {
-  'NIL',
-  'INT',
-  'BOL',
-  'FUN'
-}
-
-TOK = creatEnumTable(TOK)
-NOD = creatEnumTable(NOD)
-OBJ = creatEnumTable(OBJ)
-
-function NODE()
-  local NODE = {
-    parent,
-    left,
-    right,
-    typed
-  }
-  return NODE
-end
