@@ -134,30 +134,42 @@ function parse(str, start, parent)
     if err then
       return 1
     end
-    while 1 do
-      local node = parent.back
-      tok = scan(str, start) --peek
-      if tok == TOK_NUM then
-        start, err = fetch(str, start, TOK_NUM, parent, NOD_NUM)
-        if err then
+    local node = parent.back
+    tok = scan(str, start) --peek
+    while tok ~= TOK_RP do
+      if tok == TOK_LP
+        if parse(str, start, parent) then
+          return 1
+        elseif tok == TOK_NUM then
+          start, err = fetch(str, start, TOK_NUM, parent, NOD_NUM)
+          if err then
+            return 1
+          end
+        elseif tok == TOK_SYM then
+          start, err = fetch(str, start, TOK_SYM, parent, NOD_SYM)
+          if err then
+            return 1
+          end
+        elseif tok == TOK_ID then
+          start, err = fetch(str, start, TOK_ID, parent, NOD_ID)
+          if err then
+            return 1
+          end
+        else
+          syntax_error()
           return 1
         end
-      elseif tok == TOK_SYM then
-        start, err = fetch(str, start, TOK_SYM, parent, NOD_SYM)
-        if err then
-          return 1
-        end
-      elseif tok == TOK_ID then
-        start, err = fetch(str, start, TOK_ID, parent, NOD_ID)
-        if err then
-          return 1
-        end
-      else
-        syntax_error()
-        return 1
+        tok = scan(str, start)
       end
-    end
     start, err = match(str, start, TOK_RP)
+    if err then
+      return 1
+    end
+    return 0
+  elseif tok == TOK_EOF then
+    return 0
+  else 
+    syntax_error()
   end
 end
 
