@@ -54,10 +54,13 @@ function scan(str, s)
     end
     return TOK_NIL, s, e
   elseif c == '(' then
-    return TOK_LPAREN, s, e
+    e = e + 1
+    return TOK_LP, s, e
   elseif c == ')' then
-    return TOK_RPAREN, s, e
+    e = e + 1
+    return TOK_RP, s, e
   elseif c == '\0'  then
+    e = e + 1
     return TOK_EOF, s, e
   elseif c >= 'a' and c <= 'z' or c >= 'A' and c <= 'Z' then
     e = e + 1
@@ -87,19 +90,23 @@ function scan(str, s)
         end
         return TOK_NUM, s, e
       else
+        e = e + 1
         return TOK_ID, s, e
       end
+      e = e + 1
       return TOK_ID, s, e 
     end
+    e = e + 1
     return TOK_ID, s, e
   else 
+    e = e + 1
     return TOK_NIL, s, e
   end
 end
 
-function fetch(str, start, tok, parent, kind)
+function fetch(str, start, id, parent, kind)
   local tok, s, e = scan(str, start)
-  if  then
+  if tok ~= id then
     return s, 1
   end
   local node = {}
@@ -116,7 +123,7 @@ function fetch(str, start, tok, parent, kind)
 end
 
 function match(str, start, expected)
-  actua1, s, e = scan(str, start)
+  local actual, s, e = scan(str, start)
   if actual ~= expected then
     return start, 1
   end
@@ -128,48 +135,50 @@ function syntax_error()
 end
 
 function parse(str, start, parent)
-  local tok = scan(str, start)  -- peek
+  local tok, start = scan(str, start)  -- peek
   if tok == TOK_LP then
     start, err = fetch(str, start, TOK_LP, parent, NOD_NIL)
     if err then
       return 1
     end
     local node = parent.back
-    tok = scan(str, start) --peek
+    tok, start = scan(str, start) --peek
     while tok ~= TOK_RP do
-      if tok == TOK_LP
+      if tok == TOK_LP then
         if parse(str, start, parent) then
           return 1
-        elseif tok == TOK_NUM then
-          start, err = fetch(str, start, TOK_NUM, parent, NOD_NUM)
-          if err then
-            return 1
-          end
-        elseif tok == TOK_SYM then
-          start, err = fetch(str, start, TOK_SYM, parent, NOD_SYM)
-          if err then
-            return 1
-          end
-        elseif tok == TOK_ID then
-          start, err = fetch(str, start, TOK_ID, parent, NOD_ID)
-          if err then
-            return 1
-          end
-        else
-          syntax_error()
+        end
+      elseif tok == TOK_NUM then
+        start, err = fetch(str, start, TOK_NUM, parent, NOD_NUM)
+        if err then
           return 1
         end
-        tok = scan(str, start)
+      elseif tok == TOK_SYM then
+        start, err = fetch(str, start, TOK_SYM, parent, NOD_SYM)
+        if err then
+          return 1
+        end
+      elseif tok == TOK_ID then
+        start, err = fetch(str, start, TOK_ID, parent, NOD_ID)
+        if err then
+          return 1
+        end
+      else
+        syntax_error()
+        return 1
       end
+      tok, start = scan(str, start)
+    end
     start, err = match(str, start, TOK_RP)
     if err then
       return 1
     end
-    return 0
+    return start, nil
   elseif tok == TOK_EOF then
-    return 0
+    return start, nil
   else 
     syntax_error()
+    return 1
   end
 end
 
@@ -187,25 +196,31 @@ function start()
 
   str = file:read("*all")
   str = str..'\0'
-  if parse(str, start, node) then
-    goto close_file
+  while scan(str, start) ~= TOK_EOF do
+    local s, err =  parse(str, start, node)
+    if err then
+      goto close_file
+    end
+    start = s
   end
 
   ret = nil
   ::close_file::
-  src:close()
+  file:close()
   ::exit::
   return ret
 end
 
 os.exit(start())
 
+
 --[[
 local str = arg[1]..'\0'
 local start = 1
 repeat
-  local tok, s, e = scan(str, start)
+  local tok, s, e = parse(str, start, node)
   print(str:sub(s, e - 1), tok, s, e)
   start = e
-until tok == TOK_EOF
+until tok == tok_eof
 ]]--
+
