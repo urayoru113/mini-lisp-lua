@@ -38,3 +38,7 @@ OBJ_INT = 2
 OBJ_BOL = 3
 OBJ_FUN = 4
 
+COL_RST     = "\x1b[0m"
+COL_GREEN   = "\x1b[32m"
+COL_YELLOW  = "\x1b[33m"
+COL_MAGENTA = "\x1b[35m"

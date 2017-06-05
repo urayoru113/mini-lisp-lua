@@ -1,2 +1,0 @@
-function foo(parent)
-node = {}
