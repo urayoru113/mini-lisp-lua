@@ -1,10 +1,9 @@
 --define.lua
-
-TOK_NIL = 1 
-TOK_EOF = 2 
-TOK_NUM = 3 
-TOK_SYM = 4 
-TOK_ID = 5 
+TOK_NIL = 1
+TOK_EOF = 2
+TOK_NUM = 3
+TOK_SYM = 4
+TOK_ID = 5
 TOK_LP = 6
 TOK_RP = 7
 
