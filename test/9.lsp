@@ -1,0 +1,8 @@
+((fun () 
+      (define a 1)
+      (define b (fun (b) a))
+      (define c (fun () 1))
+      (define b 1)
+      (define c 1)
+      (define d (fun ()))
+      (d)))

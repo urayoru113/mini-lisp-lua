@@ -1,0 +1,10 @@
+(define a
+  ((fun (a) 
+        (define b (fun (b) (+ a b)))
+        (define c (fun (b) (+ a b)))
+        (define d (fun (b) (+ a b)))
+        (define e (fun (b) (+ a b)))
+        b) 1))
+(fun () 1)
+(a 2)
+(a 3)

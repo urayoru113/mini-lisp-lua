@@ -1,28 +1,28 @@
 require 'define'
 
-function node_new(node)
-  node.parent = nil
-  node.front = nil
-  node.back = nil
-  node.later = nil
-  node.kind = nil
-  node.tok = {}
-  node.tok.start = 0
-  node.tok.ending = 1
-  node.tok.id = nil
-  node.val = {}
-  node.val.i = nil
-  node.val.v = {}
-  node.val.d = {}
-  node.val.v.env = nil
-  node.val.v.off = nil
-  node.val.d.arg = nil
-  node.val.d.env = nil
+function node_new(parent, kind)
+  local node = {};
+  node.parent = parent;
+  node.kind = kind;
+  node.front = nil;
+  node.back = nil;
+  node.later = nil;
+  return node;
 end
 
 function raise(tok, str, msg)
+  local i = 1;
+  local c = str:sub(i, i);
+  local line = 1;
+  while c ~= '\0' and i <= tok.start do
+    if c == '\n' then
+      line = line + 1;
+    end
+    i = i + 1;
+    c = str:sub(i, i);
+  end
   io.write(string.format("error: %s    ----> %s\n",
-                         msg, str:sub(tok.start, tok.ending - 1)))
+                         msg, str:sub(tok.start, tok.ending - 1)));
 end
 
 function scan(str, s)
@@ -30,74 +30,73 @@ function scan(str, s)
   -- e: end
 
   -- ignore '\n', '\t', '\r', ' '
-  local c = str:sub(s, s)
-  local e
+  local c = str:sub(s, s);
+  local e;
   while c == ' '  or
     c == '\t' or
     c == '\r' or
     c == '\n' do
-    s = s + 1
-    c = str:sub(s, s)
+    s = s + 1;
+    c = str:sub(s, s);
   end
-  e = s
+  e = s;
 
   if c >= '1' and c <= '9' then
-    e = e + 1
-    c = str:sub(e, e)
+    e = e + 1;
+    c = str:sub(e, e);
     while c >= '0' and
       c <= '9' do
-      e = e + 1
-      c = str:sub(e, e)
+      e = e + 1;
+      c = str:sub(e, e);
     end
-    return TOK_NUM, s, e
+    return TOK_NUM, s, e;
   elseif c == '0' then
-    e = e + 1
-    c = str:sub(e, e)
-    if c < '0' and
-      c > '9' then
-      return TOK_NUM, s, e
+    e = e + 1;
+    c = str:sub(e, e);
+    if c < '0' or c > '9' then
+      return TOK_NUM, s, e;
     else
-      return TOK_NIL, s, e
+      return TOK_NIL, s, e;
     end
   elseif c == '#' then
-    e = e + 1
-    c = str:sub(e, e)
+    e = e + 1;
+    c = str:sub(e, e);
     if c == 't' or c == 'f' then
-      e = e + 1
-      c = str:sub(e, e)
+      e = e + 1;
+      c = str:sub(e, e);
       if not (c >= '0' and c <= '9' or
         c >= 'a' and c <= 'z' or
         c >= 'A' and c <= 'Z') then
-        return TOK_SYM, s, e
+        return TOK_SYM, s, e;
       end
     end
     while c >= '0' and c <= '9' or
       c >= 'a' and c <= 'z' or
       c >= 'A' and c <= 'Z' do
-      e = e + 1
-      c = str:sub(e, e)
+      e = e + 1;
+      c = str:sub(e, e);
     end
-    return TOK_NIL, s, e
+    return TOK_NIL, s, e;
   elseif c == '(' then
-    e = e + 1
-    return TOK_LP, s, e
+    e = e + 1;
+    return TOK_LP, s, e;
   elseif c == ')' then
-    e = e + 1
-    return TOK_RP, s, e
+    e = e + 1;
+    return TOK_RP, s, e;
   elseif c == '\0'  then
-    e = e + 1
-    return TOK_EOF, s, e
+    e = e + 1;
+    return TOK_EOF, s, e;
   elseif c >= 'a' and c <= 'z' or c >= 'A' and c <= 'Z' then
-    e = e + 1
-    c = str:sub(e, e)
+    e = e + 1;
+    c = str:sub(e, e);
     while c >= 'a' and c <= 'z' or
           c >= 'A' and c <= 'Z' or
           c >= '0' and c <= '9' or
           c == '-' do
-      e = e + 1
-          c = str:sub(e, e)
+      e = e + 1;
+      c = str:sub(e, e);
     end
-    return TOK_ID, s, e 
+    return TOK_ID, s, e;
   elseif c == '<' or
          c == '>' or
          c == '=' or
@@ -106,23 +105,23 @@ function scan(str, s)
          c == '*' or
          c == '/' then
     if c == '-' then
-      e = e + 1
-      c = str:sub(e, e)
+      e = e + 1;
+      c = str:sub(e, e);
       if c >= '0' and c <= '9' then
         while c >= '0' and c <= '9' do
-          e = e + 1
-          c = str:sub(e, e)
+          e = e + 1;
+          c = str:sub(e, e);
         end
-        return TOK_NUM, s, e
+        return TOK_NUM, s, e;
       else
-        return TOK_ID, s, e
+        return TOK_ID, s, e;
       end
     end
-    e = e + 1
-    return TOK_ID, s, e
+    e = e + 1;
+    return TOK_ID, s, e;
   else 
-    e = e + 1
-    return TOK_NIL, s, e
+    e = e + 1;
+    return TOK_NIL, s, e;
   end
 end
 
@@ -152,40 +151,39 @@ function nodtoa(kind)
     "NOT",
     "PRN",
     "PRB"
-  }
-  return names[kind]
+  };
+  return names[kind];
 end
 
 function node_dump(root, str)
-  local stack = {}
-  local indent = 0
-  local node = {}
-  node_new(node)
-  stack[1] = root
+  local stack = {};
+  local indent = 0;
+  local node;
+  stack[1] = root;
   ::continue::
   while #stack > 0 do
-    node = table.remove(stack)
+    node = table.remove(stack);
     if node == 1 then
-      table.remove(stack)
-      indent = indent - 1
-      goto continue
+      table.remove(stack);
+      indent = indent - 1;
+      goto continue;
     end
     for i = 1, indent do
-      io.write(' ')
+      io.write(' ');
     end
     if node.kind == NOD_NIL then
     elseif node.kind == NOD_NUM or
       node.kind == NOD_SYM or
       node.kind == NOD_ID then
-      io.write(string.format("%s ", str:sub(node.tok.start, node.tok.ending - 1)))
+      io.write(string.format("%s ", str:sub(node.tok.start, node.tok.ending - 1)));
     elseif node.kind == NOD_INT then
-      io.write(string.format("%d ", node.val.i))
+      io.write(string.format("%d ", node.val));
     elseif node.kind == NOD_BOL then
-      io.write(string.format("%s ", node.val.i))
+      io.write(string.format("%s ", tostring(node.val)));
     elseif node.kind == NOD_VAR then
-      io.write(string.format("(%d %d) ", node.val.v.env, node.val.v.off))
+      io.write(string.format("(%d %d) ", node.val.env, node.val.off));
     elseif node.kind == NOD_DEF then
-      local def = node.val.d;
+      local def = node.val;
       local i = 1;
       local len = 0;
       local string = "(";
@@ -200,25 +198,28 @@ function node_dump(root, str)
         i = i + 1;
       end
       io.write(string .. ") ");
+    elseif node.kind >= 9 or node.kind <= 24 then
+    else
+      print("? ");
     end
-    io.write(string.format("%s%s%s %s%s%s\n", COL_GREEN, nodtoa(node.kind), COL_RST, COL_MAGENTA, node, COL_RST))
-    local size = 0
-    local later = node.front
+    io.write(string.format("%s%s%s %s%s%s\n", COL_GREEN, nodtoa(node.kind), COL_RST, COL_MAGENTA, node, COL_RST));
+    local size = 0;
+    local later = node.front;
     while true do
       if later == nil then
-        break
+        break;
       end
-      size = size + 1
-      later = later.later
+      size = size + 1;
+      later = later.later;
     end
-    stack[#stack + 1] = node
-    stack[#stack + 1] = 1
-    node = node.front
+    stack[#stack + 1] = node;
+    stack[#stack + 1] = 1;
+    node = node.front;
     for i = #stack + size, #stack + 1, -1 do
-      stack[i] = node
-      node = node.later
+      stack[i] = node;
+      node = node.later;
     end
-    indent = indent + 1
+    indent = indent + 1;
   end
 end
 
@@ -229,20 +230,20 @@ function map_init(map, prev)
 end
 
 function map_get(map, tok, var, str)
-  local i = 0
-  local sub = str:sub(tok.start, tok.ending - 1)
+  local i = 0;
+  local sub = str:sub(tok.start, tok.ending - 1);
   while map ~= nil do
     if map.set[sub] then
       if var then
-        var.env = i
-        var.off = map.set[sub]
+        var.env = i;
+        var.off = map.set[sub];
       end
       return 1;
     end
-    map = map.prev
-    i = i + 1
+    map = map.prev;
+    i = i + 1;
   end
-  return nil
+  return nil;
 end
 
 function map_set(map, tok, var, str)
@@ -259,238 +260,253 @@ function map_set(map, tok, var, str)
   return nil;
 end
 
-function unary(parent, prev, kind, str)
-  local tok = parent.tok
-  local node = parent.front
-  if not node.later or not node.later.later then
-    raise(tok, str, "the unary operation require one operand\n")
-    return 1
-  end
-  if variables(node.later, prev, str) then
-    return 1
+function map_dump(map)
+  local i = 0;
+  while map do
+    io.write(string.format("--- scope %d---\n", i));
+    io.write(string.format("  variables: %s\n", map.set.len));
+    map = map.prev;
+    i = i + 1;
   end
 end
 
-function binary(parent, prev, kind, multi, str)
-  local tok = parent.tok
-  local node = parent.front
-  if not node.later or not node.later.later then
-    raise(tok, str, "the binary operation require at less two operand\n")
-    return 1
-  end
-  if not node.later.later.later and not multi then
-    raise(tok, str, "the binary operation require only two operand\n")
-    return 1
+function unary(parent, prev, kind, str)
+  local tok = parent.tok;
+  local node = parent.front;
+  if not node.later or node.later.later then
+    raise(tok, str, "the unary operation require one operand\n");
+    return 1;
   end
   if variables(node.later, prev, str) then
-    return 1
+    return 1;
   end
-  parent.kind = kind
-  return nil
+  parent.kind = kind;
+  return nil;
+end
+
+function binary(parent, prev, kind, multi, str)
+  local tok = parent.tok;
+  local node = parent.front;
+  if not node.later or not node.later.later then
+    raise(tok, str, "the binary operation require at less two operand\n");
+    return 1;
+  end
+  if node.later.later.later and not multi then
+    raise(tok, str, "the binary operation require only two operand\n");
+    return 1;
+  end
+  if variables(node.later, prev, str) then
+    return 1;
+  end
+  parent.kind = kind;
+  return nil;
 end
 
 function variables(node, prev, str)
   while node ~= nil do
     if node.kind == NOD_NIL then
       if semantic(node, prev, str) then
-        return 1
+        return 1;
       end
     elseif node.kind == NOD_NUM then
-      node.val.i = tonumber(str:sub(node.tok.start, node.tok.ending - 1))
-      node.kind = NOD_INT
+      node.val = tonumber(str:sub(node.tok.start, node.tok.ending - 1));
+      node.kind = NOD_INT;
     elseif node.kind == NOD_SYM then
-      node.val.i = str:sub(node.tok.start, node.tok.ending - 1) == "#t"
-                   and 1 or 0
-      node.kind = NOD_BOL
+      node.val = str:sub(node.tok.start, node.tok.ending - 1) == "#t";
+      node.kind = NOD_BOL;
     elseif node.kind == NOD_ID then
-      local var = {}
-      var.env = 0
-      var.off = 0
-      if not map_get(prev, node.tok, var, str) then
-        return 1
+      local tok = node.tok;
+      local var = {};
+      if not map_get(prev, tok, var, str) then
+        raise(tok, str, string.format("variable %s is undefined\n", str:sub(tok.start, tok.ending - 1)));
+        return 1;
       end
-      node.val.v = var
-      node.kind = NOD_VAR
+      node.val = var;
+      node.kind = NOD_VAR;
     end
-    node = node.later
+    node = node.later;
   end
-  return nil
+  return nil;
 end
 
 function tokcmp(tok_a, str_b, str)
-  local sub = str:sub(tok_a.start, tok_a.ending - 1)
-  return sub == str_b
+  local sub = str:sub(tok_a.start, tok_a.ending - 1);
+  return sub == str_b;
 end
 
 function semantic(parent, prev, str)
-  local node = parent.front
-  local ptok = parent.tok
+  local node = parent.front;
+  local ptok = parent.tok;
   if node == nil then
-    raise(ptok, str, "empty list is not allowed\n")
-    return 1
+    raise(ptok, str, "empty list is not allowed\n");
+    return 1;
   elseif node.kind == NOD_NIL then
     if semantic(node, prev, str) or
       variables(node.later, prev, str) then
-      return 1
+      return 1;
     end
-    parent.kind = NOD_FUN
-    return nil
+    parent.kind = NOD_FUN;
+    return nil;
   elseif node.kind == NOD_NUM then
-    raise(ptok, str, "integer is not a function\n")
-    return 1
+    raise(ptok, str, "integer is not a function\n");
+    return 1;
   elseif node.kind == NOD_SYM then
-    raise(ptok, str, "boolen is not a function\n")
-    return 1
+    raise(ptok, str, "boolen is not a function\n");
+    return 1;
   elseif node.kind == NOD_ID then
-    local tok = node.tok
-    if map_get(prev, tok, node.val.v, str) then
+    local tok = node.tok;
+    local var = {};
+    if map_get(prev, tok, var, str) then
       if variables(node.later, prev, str) then
-        node.kind = NOD_VAR
-        parent.kind = NOD_FUN
-        return 1
+        return 1;
       end
-      return nil
+      node.kind = NOD_VAR;
+      node.val = var;
+      parent.kind = NOD_FUN;
+      return nil;
     elseif tokcmp(tok, "fun", str) then
       if node.later == nil then
-        return 1
+        return 1;
       end
-      local arg = node.later.front
+      local arg = node.later.front;
       while arg ~= nil do
         if arg.kind ~= NOD_ID then
-          raise(arg.tok, str, "only named parameters are allowed\n")
-          return 1
+          raise(arg.tok, str, "only named parameters are allowed\n");
+          return 1;
         end
-        arg = arg.later
+        arg = arg.later;
       end
-      local map = {}
+      local map = {};
       map_init(map);
-      local args = {}  -- array
-      arg = node.later.front
+      local args = {};  -- array
+      arg = node.later.front;
       while arg ~= nil do
-        local t = arg.tok
+        local t = arg.tok;
         if map_get(map, t, nil, str) then
-          raise(t, str, "parameter names are duplicated\n")
-          return 1
+          raise(t, str, "parameter names are duplicated\n");
+          return 1;
         end
         local v = {};
-        map_set(map, t, v, str)
-        args[#args + 1] = v.off
-        arg = arg.later
+        map_set(map, t, v, str);
+        args[#args + 1] = v.off;
+        arg = arg.later;
       end
-      map.prev = prev
+      map.prev = prev;
       if variables(node.later.later, map, str) then
-        return 1
+        return 1;
       end
-      local def = parent.val.d
-      def.args = args
-      def.env = #map.set
-      parent.kind = NOD_DEF
-      return nil
+      parent.val = {};
+      parent.val.args = args;
+      parent.val.env = map.set.len;
+      parent.kind = NOD_DEF;
+      return nil;
     elseif tokcmp(tok, "define", str) then
-      local name = node.later
+      local name = node.later;
       if name.kind ~= NOD_ID then
-        raise(ptok, str, "variable name is empty\n")
-        return 1
+        raise(ptok, str, "variable name is empty\n");
+        return 1;
       end
-      local ntok = name.tok
+      local ntok = name.tok;
       if name.kind ~= NOD_ID then
-        raise(ntok, str, "variable name is not allowed\n")
-        return 1
+        raise(ntok, str, "variable name is not allowed\n");
+        return 1;
       end
-      local value = name.later
+      local value = name.later;
       if not value then
-        raise(ptok, str, "variable value is empty\n")
-        return 1
+        raise(ptok, str, "variable value is empty\n");
+        return 1;
       end
-      if value.later ~= nil then
-        raise(vtok, str, "multiple variable values is not allowed\n")
-        return 1
+      if value.later then
+        raise(vtok, str, "multiple variable values is not allowed\n");
+        return 1;
       end
-      map_set(prev, ntok, name.val.v, str)
+      local name_var = {};
+      map_set(prev, ntok, name_var, str);
       if variables(value, prev, str) then
-        return 1
+        return 1;
       end
-      name.kind = NOD_VAR
-      parent.kind = NOD_SET
-      return nil
+      name.kind = NOD_VAR;
+      name.val = name_var;
+      parent.kind = NOD_SET;
+      return nil;
     elseif tokcmp(tok, "if", str) then
-      local cond = node.later
+      local cond = node.later;
       if not cond then
-        raise(ptok, str, "the condition is empty\n")
-        return 1
+        raise(ptok, str, "the condition is empty\n");
+        return 1;
       end
-      local if_stmt = cond.later
+      local if_stmt = cond.later;
       if not if_stmt then
-        raise(ptok, str, "the if-statment is empty\n")
-        return 1
+        raise(ptok, str, "the if-statment is empty\n");
+        return 1;
       end
-      local else_stmt = if_stmt.later
+      local else_stmt = if_stmt.later;
       if not else_stmt then
-        raise(ptok, str, "the else-statment is empty\n")
-        return 1
+        raise(ptok, str, "the else-statment is empty\n");
+        return 1;
       end
       if variables(cond, prev, str) then
-        return 1
+        return 1;
       end
-      parent.kind = NOD_IF
-      return nil
+      parent.kind = NOD_IF;
+      return nil;
     elseif tokcmp(tok, "<", str) then
-      return binary(parent, prev, NOD_LT, nil, str)
+      return binary(parent, prev, NOD_LT, nil, str);
     elseif tokcmp(tok, ">", str) then
-      return binary(parent, prev, NOD_GT, nil, str)
+      return binary(parent, prev, NOD_GT, nil, str);
     elseif tokcmp(tok, "=", str) then
-      return binary(parent, prev, NOD_ET, nil, str)
+      return binary(parent, prev, NOD_EQ, nil, str);
     elseif tokcmp(tok, "+", str) then
-      return binary(parent, prev, NOD_ADD, 1, str)
+      return binary(parent, prev, NOD_ADD, 1, str);
     elseif tokcmp(tok, "-", str) then
-      return binary(parent, prev, NOD_SUB, nil, str)
+      return binary(parent, prev, NOD_SUB, nil, str);
     elseif tokcmp(tok, "*", str) then
-      return binary(parent, prev, NOD_MUL, 1, str)
+      return binary(parent, prev, NOD_MUL, 1, str);
     elseif tokcmp(tok, "/", str) then
-      return binary(parent, prev, NOD_DIV, nil, str)
+      return binary(parent, prev, NOD_DIV, nil, str);
     elseif tokcmp(tok, "mod", str) then
-      return binary(parent, prev, NOD_MOD, nil, str)
+      return binary(parent, prev, NOD_MOD, nil, str);
     elseif tokcmp(tok, "and", str) then
-      return binary(parent, prev, NOD_AND, 1, str)
+      return binary(parent, prev, NOD_AND, 1, str);
     elseif tokcmp(tok, "or", str) then
-      return binary(parent, prev, NOD_OR, 1, str)
+      return binary(parent, prev, NOD_OR, 1, str);
     elseif tokcmp(tok, "not", str) then
-      return unary(parent, prev, NOD_NOT, str)
+      return unary(parent, prev, NOD_NOT, str);
     elseif tokcmp(tok, "print-num", str) then
       if not node.later then
-        raise(ptok, str, "the parameter of print-num is empty\n")
-        return 1
+        raise(ptok, str, "the parameter of print-num is empty\n");
+        return 1;
       end
       if node.later.later then
-        local vtok = node.later.later.tok
-        raise(vtok, str, "only one parameter of print-num is allowed\n")
-        return 1
+        local vtok = node.later.later.tok;
+        raise(vtok, str, "only one parameter of print-num is allowed\n");
+        return 1;
       end
       if variables(node.later, prev, str) then
-        return 1
+        return 1;
       end
-      parend.kind = NOD_PRN
-      return nil
-    elseif tokcmp(tok, "print-bol", str) then
+      parent.kind = NOD_PRN;
+      return nil;
+    elseif tokcmp(tok, "print-bool", str) then
       if not node.later then
-        raise(ptok, str, "the parameter of print-bool is empty\n")
-        return 1
+        raise(ptok, str, "the parameter of print-bool is empty\n");
+        return 1;
       end
       if node.later.later then
-        raise(vtok, str, "only one parameter of print-bool is allowed\n")
-        return 1
+        raise(vtok, str, "only one parameter of print-bool is allowed\n");
+        return 1;
       end
       if variables(node.later, prev, str) then
-        return 1
+        return 1;
       end
-      parent.kind = NOD_PRB
-      return nil
+      parent.kind = NOD_PRB;
+      return nil;
     else
-      raise(tok, str, "variable %.*s undifined\n")
-      return 1
+      raise(tok, str, "variable %.*s undifined\n");
+      return 1;
     end
   else
-    return 1
+    return 1;
   end
 end
 
@@ -513,12 +529,10 @@ function env_add(env, len)
     return;
   end
   for i = #env.locs + 1, len do
-    print(env.locs[i]);
     env.locs[i] = {};
     env.locs[i].obj = {};
     env.locs[i].obj.kind = OBJ_NIL;
   end
-  return;
 end
 
 function env_get(env, var, obj)
@@ -549,26 +563,25 @@ function env_dump(env, ret)
 end
 
 function fetch(str, start, id, parent, kind)
-  local tok, s, e = scan(str, start)
+  local tok, s, e = scan(str, start);
   if tok ~= id then
-    return s, 1
+    return s, 1;
   end
-  local node = {}
-  node_new(node)
-  node.parent = parent
-  node.kind = kind
-  node.tok = {}
-  node.tok.start = s
-  node.tok.ending = e
-  node.tok.id = tok
+  local node = node_new(nil, NOD_NIL);
+  node.parent = parent;
+  node.kind = kind;
+  node.tok = {};
+  node.tok.start = s;
+  node.tok.ending = e;
+  node.tok.id = tok;
   if parent.front == nil then
-    parent.front = node
-    parent.back = node
+    parent.front = node;
+    parent.back = node;
   else
-    parent.back.later = node
-    parent.back = node
+    parent.back.later = node;
+    parent.back = node;
   end
-  return e, nil
+  return e, nil;
 end
 
 function match(str, start, expected)
@@ -580,107 +593,321 @@ function match(str, start, expected)
 end
 
 function syntax_error()
-  print('hello world !')
+  print('hello world !');
 end
 
 function parse(str, start, parent)
-  local tok, s = scan(str, start)  -- peek
+  local tok, s = scan(str, start);  -- peek
   if tok == TOK_LP then
-    start, err = fetch(str, start, TOK_LP, parent, NOD_NIL)
+    start, err = fetch(str, start, TOK_LP, parent, NOD_NIL);
     if err then
-      return start, 1
+      return start, 1;
     end
-    local node = parent.back
+    local node = parent.back;
     while true do
-      tok, s = scan(str, start) --peek
+      tok, s = scan(str, start); --peek
+      _, s, e = scan(str, start); --peek
       if tok == TOK_RP then
-        break
+        break;
       end
       if tok == TOK_LP then
-        start, err = parse(str, start, node)
+        start, err = parse(str, start, node);
         if err then
-          return start, 1
+          return start, 1;
         end
       elseif tok == TOK_NUM then
-        start, err = fetch(str, start, TOK_NUM, node, NOD_NUM)
+        start, err = fetch(str, start, TOK_NUM, node, NOD_NUM);
         if err then
-          return start, 1
+          return start, 1;
         end
       elseif tok == TOK_SYM then
-        start, err = fetch(str, start, TOK_SYM, node, NOD_SYM)
+        start, err = fetch(str, start, TOK_SYM, node, NOD_SYM);
         if err then
-          return start, 1
+          return start, 1;
         end
       elseif tok == TOK_ID then
-        start, err = fetch(str, start, TOK_ID, node, NOD_ID)
+        start, err = fetch(str, start, TOK_ID, node, NOD_ID);
         if err then
-          return start, 1
+          return start, 1;
         end
       else
-        syntax_error()
-        return start, 1
+        syntax_error();
+        return start, 1;
       end
     end
-    start, err = match(str, start, TOK_RP)
+    start, err = match(str, start, TOK_RP);
     if err then
-      return start, 1
+      return start, 1;
     end
-    return start, nil
+    return start, nil;
   elseif tok == TOK_EOF then
-    return start, nil
+    return start, nil;
   else 
-    syntax_error()
-    return start, 1
+    syntax_error();
+    return start, 1;
+  end
+end
+
+function lt(a, b, ret)   ret.val = a < b;             end
+function gt(a, b, ret)   ret.val = a > b;             end
+function eq(a, b, ret)   ret.val = a == b;            end
+function add(a, b, ret)  ret.val = a + b;             end
+function sub(a, b, ret)  ret.val = a - b;             end
+function mul(a, b, ret)  ret.val = a * b;             end
+function div(a, b, ret)  ret.val = math.floor(a / b); end
+function mod(a, b, ret)  ret.val = a % b;             end
+function and_(a, b, ret) ret.val = a and b;           end
+function or_(a, b, ret)  ret.val = a or b;            end
+function not_(a, ret)    ret.val = not a;             end
+
+function calc(parent, prev, stack, cb, tokin, tokout, unary, str, obj)
+  local ptok = parent.tok;
+  local node = parent.front.later;
+  local a = {};
+  if eval(node, prev, stack, str, a) then
+    return 1;
+  end
+  local atok = node.tok;
+  if a.kind ~= tokin then
+    local msg = tokin == OBJ_INT and "integer" or "boolen";
+    raise(atok, str, "variables is not " .. msg .. "\n");
+    return 1;
+  end
+  while true do
+    node = node.later;
+    if not node then
+      break;
+    end
+    local b = {};
+    if eval(node, prev, stack, str, b) then
+      return 1;
+    end
+    local btok = node.tok;
+    if b.kind ~= tokin then
+      local msg = tokin == OBJ_INT and "integer" or "boolen";
+      raise(btok, str, "variables is not " .. msg .. "\n");
+      return 1;
+    end
+    cb(a.val, b.val, a);
+  end
+  if unary then
+    cb(a.val, a);
+  end
+  obj.val = a.val;
+  obj.kind = tokout;
+  return nil;
+end
+
+function eval(parent, prev, stack, str, obj)
+  if parent.kind == NOD_INT then
+    obj.val = parent.val;
+    obj.kind = OBJ_INT;
+    return nil;
+  elseif parent.kind == NOD_BOL then
+    obj.val = parent.val;
+    obj.kind = OBJ_BOL;
+    return nil;
+  elseif parent.kind == NOD_VAR then
+    env_get(prev, parent.val, obj);
+    return nil;
+  elseif parent.kind == NOD_DEF then
+    obj.val = {};
+    obj.val.env = prev;
+    obj.val.node = parent;
+    obj.kind = OBJ_FUN;
+    return nil;
+  elseif parent.kind == NOD_FUN then
+    local caller = parent.front;
+    local o = {};
+    if eval(caller, prev, stack, str, o) then
+      return 1;
+    end
+    local ctok = caller.tok;
+    if o.kind ~= OBJ_FUN then
+      raise(ctok, str, "variable is not function\n");
+      return 1;
+    end
+    local fun = o.val;
+    local callee = fun.node;
+    local def = callee.val;
+    local len = 0;
+    --o(n)
+    def.len = 0;
+    for k, v in pairs(def.args) do
+      def.len = def.len + 1;
+    end
+    --o(n)
+    local arg = caller.later;
+    while arg do
+      arg = arg.later;
+      len = len + 1;
+    end
+    local ptok = parent.tok;
+    if len ~= def.len then
+      raise(ptok, str, "parameters length do not match\n");
+      return 1;
+    end
+    local env = env_new(fun.env, stack, def.env);
+    local params = callee.front.later;
+    local arg = caller.later;
+    for i = 1, def.len do
+      local ret = {};
+      if eval(arg, prev, env, str, ret) then
+        return 1;
+      end
+      local var = {};
+      var.env = 0;
+      var.off = def.args[i];
+      env_set(env, var, ret);
+      arg = arg.later;
+    end
+    obj.kind = OBJ_NIL;
+    local stmt = params.later;
+    while stmt do
+      if eval(stmt, env, env, str, obj) then
+        return 1;
+      end
+      stmt = stmt.later;
+    end
+    return nil;
+  elseif parent.kind == NOD_SET then
+    local name = parent.front.later;
+    local o = {};
+    if eval(name.later, prev, stack, str, o) then
+      return 1;
+    end
+    env_set(prev, name.val, o);
+    obj.kind = OBJ_NIL;
+    return nil;
+  elseif parent.kind == NOD_IF then
+    local cond = parent.front.later;
+    local o = {};
+    if eval(cond, prev, stack, str, o) then
+      return 1;
+    end
+    local tok = cond.tok;
+    if o.kind ~= OBJ_BOL then
+      raise(tok, str, "variables is not boolean\n");
+      return 1;
+    end
+    local stmt = o.val and cond.later or cond.later.later;
+    if eval(stmt, prev, stack, str, obj) then
+      return 1;
+    end
+    local stok = stmt.tok;
+    if obj.kind == OBJ_NIL then
+      raise(stok, str, "the return value of if-else statement is nil\n");
+      return 1;
+    end
+    return nil;
+  elseif parent.kind == NOD_LT then
+    return calc(parent, prev, stack, lt, OBJ_INT, OBJ_BOL, nil, str, obj);
+  elseif parent.kind == NOD_GT then
+    return calc(parent, prev, stack, gt, OBJ_INT, OBJ_BOL, nil, str, obj);
+  elseif parent.kind == NOD_EQ then
+    return calc(parent, prev, stack, eq, OBJ_INT, OBJ_BOL, nil, str, obj);
+  elseif parent.kind == NOD_ADD then
+    return calc(parent, prev, stack, add, OBJ_INT, OBJ_INT, nil, str, obj);
+  elseif parent.kind == NOD_SUB then
+    return calc(parent, prev, stack, sub, OBJ_INT, OBJ_INT, nil, str, obj);
+  elseif parent.kind == NOD_MUL then
+    return calc(parent, prev, stack, mul, OBJ_INT, OBJ_INT, nil, str, obj);
+  elseif parent.kind == NOD_DIV then
+    return calc(parent, prev, stack, div, OBJ_INT, OBJ_INT, nil, str, obj);
+  elseif parent.kind == NOD_MOD then
+    return calc(parent, prev, stack, mod, OBJ_INT, OBJ_INT, nil, str, obj);
+  elseif parent.kind == NOD_AND then
+    return calc(parent, prev, stack, and_, OBJ_BOL, OBJ_BOL, nil, str, obj);
+  elseif parent.kind == NOD_OR then
+    return calc(parent, prev, stack, or_, OBJ_BOL, OBJ_BOL, nil, str, obj);
+  elseif parent.kind == NOD_NOT then
+    return calc(parent, prev, stack, not_, OBJ_BOL, OBJ_BOL, 1, str, obj);
+  elseif parent.kind == NOD_PRN then
+    local num = parent.front.later;
+    local o = {};
+    if eval(num, prev, stack, str, o) then
+      return 1
+    end
+    local tok = num.tok;
+    if o.kind ~= OBJ_INT then
+      raise(tok, str, "the argument of print-num is not integer\n");
+      return 1;
+    end
+    obj.kind = OBJ_NIL;
+    print(o.val);
+    return nil;
+  elseif parent.kind == NOD_PRB then
+    local num = parent.front.later;
+    local o = {};
+    if eval(num, prev, stack, str, o) then
+      return 1;
+    end
+    local tok = num.tok;
+    if o.kind ~= OBJ_BOL then
+      raise(tok, str, "the argument of print-bool is not boolen\n");
+      return 1;
+    end
+    print(o.val and "#t" or "#f");
+  else
+    return 1;
   end
 end
 
 function start()
-  local start = 1
-  local ret = 1
-  local file  
-  local str
-  local parent = {}
-  local map = {}
-  local node = {}
+  local start = 1;
+  local ret = 1;
+  local file;
+  local str;
+  local parent = node_new(nil, NOD_NIL);
+  local map = {};
+  local node;
   local env;
-  node_new(parent)
-  parent.kind = NOD_NIL
-  parent.tok.start = 0
-  parent.tok.ending = 1
-  parent.tok.id = TOK_NIL
+  parent.tok = {};
+  parent.tok.start = 0;
+  parent.tok.ending = 1;
+  parent.tok.id = TOK_NIL;
   map_init(map);
-  file = io.open('test-fun.lsp', r)
+  file = io.open(arg[1], r);
   if (file == nil) then
-    goto exit
+    goto exit;
   end
 
-  str = file:read("*all")
-  str = str..'\0'
+  str = file:read("*all");
+  str = str..'\0';
   while scan(str, start) ~= TOK_EOF do
-    local s, err = parse(str, start, parent)
+    local s, err = parse(str, start, parent);
     if err then
-      goto close_file
+      goto close_file;
     end
-    start = s
+    start = s;
   end
-  node_new(node)
-  node = parent.front
+
+  --node_dump(parent, str)
+  node = parent.front;
   env = env_new(nil, nil, 0);
   while node ~= nil do
     if semantic(node, map, str) or env_add(env, map.set.len) then
       return 1
     end
-    node = node.later
+    node = node.later;
   end
-  node_dump(parent, str)
-  ret = nil
+  --node_dump(parent, str);
+  node = parent.front;
+  while node do
+    local o = {};
+    if eval(node, env, env, str, o) then
+      return 1;
+    end
+    node = node.later;
+  end
+  ret = nil;
   ::close_file::
-  file:close()
+  file:close();
   ::exit::
-  return ret
+  return ret;
 end
 
-os.exit(start())
+os.exit(start());
 
 --[[
 local str = arg[1]..'\0'
