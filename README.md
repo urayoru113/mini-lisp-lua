@@ -4,6 +4,7 @@
 
 ## You can run
     $ lua scan.lua [file name]
+to interpret file
 ##
 
 ## or 
