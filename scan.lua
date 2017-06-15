@@ -11,18 +11,33 @@ function node_new(parent, kind)
 end
 
 function raise(tok, str, msg)
-  local i = 1;
-  local c = str:sub(i, i);
   local line = 1;
-  while c ~= '\0' and i <= tok.start do
+  local start = 0;
+  local ending = 1;
+  local c = str:sub(ending, ending);
+  while true do
+    if ending == tok.start then
+      while c ~= '\0' and c ~= '\n' do
+        ending = ending + 1;
+        c = str:sub(ending, ending);
+      end
+      break;
+    end
+    if c == '\0' then
+      break;
+    end
     if c == '\n' then
+      start = ending;
       line = line + 1;
     end
-    i = i + 1;
-    c = str:sub(i, i);
+    ending = ending + 1;
+    c = str:sub(ending, ending);
   end
-  io.write(string.format("error: %s    ----> %s\n",
-                         msg, str:sub(tok.start, tok.ending - 1)));
+  io.write(string.format("In source file:%d:%d: error: %s%s\n", line, tok.start - start, msg, str:sub(start + 1, ending - 1)));
+  for i = start + 1, tok.start - 1 do
+    io.write(' ');
+  end
+  io.write("^-----\n");
 end
 
 function scan(str, s)
