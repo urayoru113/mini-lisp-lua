@@ -1,19 +1,13 @@
 # mini-lisp-lua
 
 
--------------------------------------------
 
-lua scan.lua [file name]
+## You can run
+    $ lua scan.lua [file name]
+##
 
-
-
-or run
-
-
-
-./exec.sh
-
-
-
+## or 
+    $ ./exec.sh
 
 to execute lsp file in test_data/hidden
+##
