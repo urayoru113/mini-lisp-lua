@@ -1,10 +1,11 @@
 # mini-lisp-lua
 
+This is mini lisp implement in lua
 
 
 ## You can run
     $ lua scan.lua [file name]
-to interpret file
+to interpret lsp file
 ##
 
 ## or 
